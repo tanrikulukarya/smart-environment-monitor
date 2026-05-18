@@ -28,7 +28,11 @@ LiquidCrystal lcd(36, 37, 26, 27, 28, 29);
 #define LcdRWPin 35
 #define BackLight 31
 
+//LDR
+int ldr = A11;
 
+//RELAY
+int relay = 6;
 
 
 void setup() {
@@ -41,22 +45,18 @@ void setup() {
     pinMode(fPin ,OUTPUT);
     pinMode(gPin ,OUTPUT);
     pinMode(hPin ,OUTPUT);
+
     pinMode(GND1 ,OUTPUT);
     pinMode(GND2 ,OUTPUT);
     pinMode(GND3 ,OUTPUT);
     pinMode(GND4 ,OUTPUT);
-    digitalWrite(aPin ,HIGH);
-    digitalWrite(bPin ,HIGH);
-    digitalWrite(cPin ,HIGH);
-    digitalWrite(dPin ,HIGH);
-    digitalWrite(ePin ,HIGH);
-    digitalWrite(fPin ,HIGH);
-    digitalWrite(gPin ,HIGH);
-    digitalWrite(hPin ,HIGH);
-    digitalWrite(GND1,HIGH);
-    digitalWrite(GND2 ,HIGH);
-    digitalWrite(GND3 ,HIGH);
-    digitalWrite(GND4 ,HIGH);
+
+    pinMode(buzzer, OUTPUT);
+    pinMode(relay,OUTPUT);
+    digitalWrite(relay, LOW);
+
+    ledSetup();
+    
 
 }
 
@@ -79,18 +79,17 @@ void letterC(){
 }
 
 void closeAll(){
-    digitalWrite(aPin ,LOW);
-    digitalWrite(bPin ,LOW);
-    digitalWrite(cPin ,LOW);
-    digitalWrite(dPin ,LOW);
-    digitalWrite(ePin ,LOW);
-    digitalWrite(fPin ,LOW);
-    digitalWrite(gPin ,LOW);
-    digitalWrite(hPin ,LOW);
-    digitalWrite(GND1,LOW);
-    digitalWrite(GND2 ,LOW);
-    digitalWrite(GND3 ,LOW);
-    digitalWrite(GND4 ,LOW);
+    digitalWrite(aPin, LOW);
+    digitalWrite(bPin, LOW);
+    digitalWrite(cPin, LOW);
+    digitalWrite(dPin, LOW);
+
+    // e,f,g,h LCD ile ortak 
+
+    digitalWrite(GND1, LOW);
+    digitalWrite(GND2, LOW);
+    digitalWrite(GND3, LOW);
+    digitalWrite(GND4, LOW);
 }
 
 int tempReader(){
@@ -101,12 +100,24 @@ int tempReader(){
 
   Serial.println(temperature);
 
-  return temperature;
-
-  delay(1000);
-
+  return (int)temperature;
 
 }
+
+int ldrReader(){
+  int sensorValue = analogRead(ldr);
+  return (int)sensorValue;
+}
+
+void relayOpener(){
+  digitalWrite(relay , HIGH);
+}
+
+void relayCloser(){
+  digitalWrite(relay , LOW);
+}
+
+
 
 
 int potReader(){
@@ -117,48 +128,72 @@ int potReader(){
 }
 
 void buzzbuzzH(){
-    digitalWrite(5,HIGH);
+    digitalWrite(buzzer,HIGH);
 }
 
 void buzzbuzzL(){
-    digitalWrite(5,LOW);
+    digitalWrite(buzzer,LOW);
 }
 
-void ledOn(){
+void ledSetup(){
 
-  //#define LcdRWPin 35
-  //#define BackLight 31
-pinMode(LcdRWPin , OUTPUT);
-digitalWrite(LcdRWPin,LOW);
+    pinMode(LcdRWPin , OUTPUT);
+    digitalWrite(LcdRWPin,LOW);
 
-pinMode(BackLight , OUTPUT);
-digitalWrite(BackLight, HIGH); // LCD ışığı aç
+    pinMode(BackLight , OUTPUT);
+    digitalWrite(BackLight, HIGH); // LCD ışığı aç
 
-lcd.begin(16, 2);
-
+    lcd.begin(16, 2);
 
 }
 
 void loop() {
-    closeAll();
-    delay(1000);
+   
     int potValue = potReader();
     int tempValue = tempReader();
-    ledOn();
+    int ldrValue = ldrReader();
+
+    if(ldrValue > 700){
+      relayOpener();
+    }else{
+      relayCloser();
+    }
+
+    
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Temp:");
+    lcd.print(tempValue);
+    lcd.print(" C");
+    lcd.setCursor(0, 1);
+    lcd.print("Dimness: ");
+    lcd.print(ldrValue);
+    lcd.setCursor(10, 0);
+    lcd.print("P=");
+    lcd.print(potValue);
+
+
+
+    closeAll();
 
     if (tempValue > 20) {
         letterC();
-        delay(1000);
 
         if (potValue > 600) {
-            buzzbuzzH();
-            delay(100);
-            buzzbuzzL();
-        }
+    buzzbuzzH();
+
+    for(int i=0; i<10; i++){
+        closeAll();
+        letterC();
+        delay(10);
+    }
+
+    buzzbuzzL();
+}
 
     } else {
         letterA();
-        delay(1000);
     }
+    delay(1000);
 }
 
