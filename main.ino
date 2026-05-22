@@ -34,6 +34,12 @@ int ldr = A11;
 //RELAY
 int relay = 6;
 
+// isr
+int led3 = 46;
+volatile bool ledOn = false;
+volatile unsigned long presedTime = 0;
+
+
 
 void setup() {
     Serial.begin(9600);
@@ -56,6 +62,10 @@ void setup() {
     digitalWrite(relay, LOW);
 
     ledSetup();
+
+    pinMode(led3, OUTPUT);
+    digitalWrite(led3, LOW);
+    attachInterrupt(1, butonISR, CHANGE); 
     
 
 }
@@ -102,6 +112,12 @@ int tempReader(){
 
   return (int)temperature;
 
+}
+
+
+void butonISR() {
+  ledOn = true;
+  presedTime = millis();
 }
 
 int ldrReader(){
@@ -195,5 +211,14 @@ void loop() {
         letterA();
     }
     delay(1000);
+
+
+    if (ledOn) {
+    digitalWrite(led3, HIGH);
+    if (millis() - presedTime >= 10000) {
+        digitalWrite(led3, LOW);
+        ledOn = false;
+    }
+}
 }
 
